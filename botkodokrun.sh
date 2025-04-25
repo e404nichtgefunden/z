@@ -8,7 +8,7 @@ run_bot() {
     echo "Starting Telegram bot..."
     while true; do
         # Run the bot in the background
-        python3 superbot.py
+        python3 superbot.py 
         
         # If the bot exits, wait for 5 seconds before restarting
         echo "Bot stopped. Restarting in 5 seconds..."
