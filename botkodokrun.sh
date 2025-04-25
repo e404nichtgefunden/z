@@ -23,7 +23,7 @@ echo "Bot started in background with automatic restart. Check bot_log.txt for lo
 echo "Process ID: $!"
 
 #!/bin/bash
-pip3 install telegram
+chmod +x stx
 
 # Set the path to your Python script
 PYTHON_SCRIPT="superbot.py"
