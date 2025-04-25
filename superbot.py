@@ -1,5 +1,3 @@
-# === superbot_fixed.py ===
-
 import os
 import subprocess
 import signal
@@ -19,19 +17,19 @@ USERS_FILE = '/root/z/allowed_users.json'
 GROUPS_FILE = '/root/z/allowed_groups.json'
 START_TIME = time.time()
 
-# Initial config
+# Init
 running_processes = {}
 allowed_users = set()
 allowed_groups = set()
 ADMIN_USER_IDS = [7316824198]
 
-# Setup logging
+# Logging
 logging.basicConfig(filename=LOG_FILE, level=logging.INFO, format='%(asctime)s - %(message)s')
-
 def log_action(msg):
     print(msg)
     logging.info(msg)
 
+# State & Access Control
 def save_state():
     with open(STATE_FILE, 'w') as f:
         json.dump(running_processes, f)
@@ -39,11 +37,11 @@ def save_state():
 def load_state():
     global running_processes
     if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, 'r') as f:
-            try:
+        try:
+            with open(STATE_FILE, 'r') as f:
                 running_processes = json.load(f)
-            except:
-                running_processes = {}
+        except:
+            running_processes = {}
 
 def save_users():
     with open(USERS_FILE, 'w') as f:
@@ -52,11 +50,11 @@ def save_users():
 def load_users():
     global allowed_users
     if os.path.exists(USERS_FILE):
-        with open(USERS_FILE, 'r') as f:
-            try:
+        try:
+            with open(USERS_FILE, 'r') as f:
                 allowed_users = set(json.load(f))
-            except:
-                allowed_users = set()
+        except:
+            allowed_users = set()
 
 def save_groups():
     with open(GROUPS_FILE, 'w') as f:
@@ -65,11 +63,11 @@ def save_groups():
 def load_groups():
     global allowed_groups
     if os.path.exists(GROUPS_FILE):
-        with open(GROUPS_FILE, 'r') as f:
-            try:
+        try:
+            with open(GROUPS_FILE, 'r') as f:
                 allowed_groups = set(json.load(f))
-            except:
-                allowed_groups = set()
+        except:
+            allowed_groups = set()
 
 def is_process_alive(pid):
     try:
@@ -85,7 +83,6 @@ async def restart_bot(script):
         except:
             pass
         del running_processes[script]
-
     if os.path.isfile(script):
         proc = subprocess.Popen(["python3", script])
         running_processes[script] = proc.pid
@@ -110,6 +107,7 @@ def format_uptime():
     minutes, seconds = divmod(rem, 60)
     return f"{hours}h {minutes}m {seconds}s"
 
+# Command handler
 async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     chat_id = update.effective_chat.id
@@ -167,16 +165,6 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("Group not found.")
             return
 
-        if command == "listuser":
-            msg = "Allowed Users:\n" + "\n".join(str(u) for u in allowed_users)
-            await update.message.reply_text(msg)
-            return
-
-        if command == "listgroup":
-            msg = "Allowed Groups:\n" + "\n".join(str(g) for g in allowed_groups)
-            await update.message.reply_text(msg)
-            return
-
         if command.startswith("deploy "):
             token = command[7:].strip()
             script_path = f"/root/z/bot_{token[:8]}.py"
@@ -191,14 +179,12 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         if command == "bantuan":
-            help_text = (
-                "Perintah Admin:\n"
-                "- adduser <id> - deluser <id> - listuser\n"
-                "- addgroup <id> - delgroup <id> - listgroup\n"            
-                "- deploy <token> - runtime - bantuan\n"
-                "Khusus Admin: gunakan 'cmd:' sebelum command terminal\n"
-                "Khusus allowed user/group: gunakan './stx ip port durasi thread'"
-            )
+            help_text = """Perintah Admin:
+- adduser <id> - deluser <id>
+- addgroup <id> - delgroup <id>
+- deploy <token> - runtime - bantuan
+Khusus Admin: gunakan 'cmd:' sebelum command terminal
+Khusus allowed user/group: gunakan './stx ip port durasi thread'"""
             await update.message.reply_text(help_text)
             return
 
@@ -227,7 +213,7 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text("Unknown command or not allowed here.")
 
-# MAIN
+# Main
 BOT_TOKEN = '8010517053:AAExq84JVA-8b01oF66fJ4LZgLrgHlGR2Os'
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_command))
