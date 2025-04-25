@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # nohup > 
-nohup python3 superbot.py! 
+nohup python3 superbot.py > /dev/null 2>&1 &
 
 # Function to run the bot and restart if it crashes
 run_bot() {
