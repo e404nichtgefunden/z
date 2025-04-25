@@ -1,3 +1,5 @@
+# === superbot_fixed.py ===
+
 import os
 import subprocess
 import signal
@@ -114,20 +116,16 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_type = update.effective_chat.type
     command = update.message.text.strip()
 
-    # Group access control
     if chat_type in ['group', 'supergroup'] and chat_id not in allowed_groups and not command.startswith("./stx"):
         await update.message.reply_text("This group is not allowed to use the bot.")
         return
 
-    # User access control
     if user_id not in ADMIN_USER_IDS and user_id not in allowed_users and not command.startswith("./stx"):
         await update.message.reply_text("Access denied.")
         return
 
-    # LOG
     log_action(f"[COMMAND] {user_id}@{chat_id} > {command}")
 
-    # Commands for Admin
     if user_id in ADMIN_USER_IDS:
         if command.startswith("adduser "):
             new_id = command[8:].strip()
@@ -170,14 +168,12 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
         if command == "listuser":
-            msg = "Allowed Users:
-" + "\n".join(str(u) for u in allowed_users)
+            msg = "Allowed Users:\n" + "\n".join(str(u) for u in allowed_users)
             await update.message.reply_text(msg)
             return
 
         if command == "listgroup":
-            msg = "Allowed Groups:
-" + "\n".join(str(g) for g in allowed_groups)
+            msg = "Allowed Groups:\n" + "\n".join(str(g) for g in allowed_groups)
             await update.message.reply_text(msg)
             return
 
@@ -196,16 +192,11 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if command == "bantuan":
             help_text = (
-                "Perintah Admin:
-"
-                "- adduser <id> - deluser <id> - listuser
-"
-                "- addgroup <id> - delgroup <id> - listgroup
-"            
-                "- deploy <token> - runtime - bantuan
-"
-                "Khusus Admin: gunakan 'cmd:' sebelum command terminal
-"
+                "Perintah Admin:\n"
+                "- adduser <id> - deluser <id> - listuser\n"
+                "- addgroup <id> - delgroup <id> - listgroup\n"            
+                "- deploy <token> - runtime - bantuan\n"
+                "Khusus Admin: gunakan 'cmd:' sebelum command terminal\n"
                 "Khusus allowed user/group: gunakan './stx ip port durasi thread'"
             )
             await update.message.reply_text(help_text)
@@ -223,7 +214,6 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text(output[i:i+4000])
             return
 
-    # Allowed users/groups command
     if command.startswith("./stx"):
         try:
             result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=600)
