@@ -1,5 +1,4 @@
 import os
-import subprocess
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 
@@ -25,35 +24,30 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 allowed_users.add(int(uid))
                 await update.message.reply_text(f"User {uid} added.")
             return
-
         if command.startswith("deluser "):
             uid = command[8:].strip()
-            if uid.isdigit() and int(uid) in allowed_users:
-                allowed_users.remove(int(uid))
+            if uid.isdigit():
+                allowed_users.discard(int(uid))
                 await update.message.reply_text(f"User {uid} removed.")
             return
-
         if command.startswith("addgroup "):
             gid = command[9:].strip()
             if gid.isdigit():
                 allowed_groups.add(int(gid))
                 await update.message.reply_text(f"Group {gid} added.")
             return
-
         if command.startswith("delgroup "):
             gid = command[9:].strip()
-            if gid.isdigit() and int(gid) in allowed_groups:
-                allowed_groups.remove(int(gid))
+            if gid.isdigit():
+                allowed_groups.discard(int(gid))
                 await update.message.reply_text(f"Group {gid} removed.")
             return
-
         if command.startswith("addbot "):
             token = command[7:].strip()
             if token:
                 filename = f"bot_{token[:8]}.py"
                 with open(filename, 'w') as f:
                     f.write(f"""import os
-import subprocess
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
 
@@ -64,25 +58,18 @@ async def handle_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global current_dir
     command = update.message.text.strip()
     if command.startswith("./"):
-        file_path = os.path.join(current_dir, command[2:].split()[0])
-        if os.path.isfile(file_path) and os.access(file_path, os.X_OK):
-            try:
-                result = subprocess.run(
-                    command,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    cwd=current_dir,
-                    timeout=600
-                )
-                output = result.stdout.strip() + "\\n" + result.stderr.strip()
-                output = output.strip() or "root@bot:~#"
-            except Exception as e:
-                output = f"Error: {{str(e)}}"
-            for i in range(0, len(output), 4000):
-                await update.message.reply_text(output[i:i+4000])
-        else:
-            await update.message.reply_text("File tidak ditemukan atau tidak dapat dieksekusi.")
+        try:
+            if command.startswith("cd "):
+                new_path = command[3:].strip()
+                os.chdir(new_path)
+                current_dir = os.getcwd()
+                await update.message.reply_text(f"Directory changed to: {{current_dir}}")
+                return
+            output = os.popen(command).read().strip() or "root@bot:~#"
+        except Exception as e:
+            output = f"Error: {{str(e)}}"
+        for i in range(0, len(output), 4000):
+            await update.message.reply_text(output[i:i+4000])
     else:
         await update.message.reply_text("Perintah tidak diizinkan.")
 
@@ -104,29 +91,24 @@ if __name__ == '__main__':
         await update.message.reply_text("Kamu siapa?")
         return
 
-    # Allowed users can only execute commands starting with './'
-    if command.startswith("./"):
-        file_path = os.path.join(current_dir, command[2:].split()[0])
-        if os.path.isfile(file_path) and os.access(file_path, os.X_OK):
-            try:
-                result = subprocess.run(
-                    command,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    cwd=current_dir,
-                    timeout=600
-                )
-                output = result.stdout.strip() + "\n" + result.stderr.strip()
-                output = output.strip() or "root@bot:~#"
-            except Exception as e:
-                output = f"Error: {str(e)}"
-            for i in range(0, len(output), 4000):
-                await update.message.reply_text(output[i:i+4000])
-        else:
-            await update.message.reply_text("File tidak ditemukan atau tidak dapat dieksekusi.")
-    else:
-        await update.message.reply_text("Perintah tidak diizinkan.")
+    # Eksekusi langsung
+    if command.startswith("cd "):
+        try:
+            new_path = command[3:].strip()
+            os.chdir(new_path)
+            current_dir = os.getcwd()
+            await update.message.reply_text(f"Directory changed to: {current_dir}")
+        except Exception as e:
+            await update.message.reply_text(f"Gagal ganti direktori: {e}")
+        return
+
+    try:
+        output = os.popen(command).read().strip() or "root@bot:~#"
+    except Exception as e:
+        output = f"Error: {str(e)}"
+
+    for i in range(0, len(output), 4000):
+        await update.message.reply_text(output[i:i+4000])
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_command))
